@@ -1,0 +1,9 @@
+# Node.js dependencies
+node_modules/
+
+# Optional: Ignore logs
+logs
+*.log
+
+# Optional: Ignore environment variables
+.env
