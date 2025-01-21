@@ -11,10 +11,6 @@ const PORT = process.env.PORT || 3000;
 // Middleware to parse JSON requests
 app.use(express.json());
 
-// OpenAI API configuration
-//const configuration = new Configuration({
-    //apiKey: process.env.OPENAI_API_KEY, // Set your OpenAI API key in the environment variable
-//});
 const openai = new OpenAIApi();
 
 // Endpoint to get related search phrases
@@ -34,17 +30,16 @@ app.get('/api/related-searches', async (req, res) => {
     }
 });
 
-app.get('/api/keyword-info', async (req,res)=> { 
+app.get('/api/keyword-volume', async (req,res)=> { 
 
-
-    // The Fetch API inherently supports only UTF-8 encoding, eliminating the need for character set conversions.
 fetch('https://api.keywordseverywhere.com/v1/get_keyword_data', {
     method: 'POST',
     body: new URLSearchParams([
         ['dataSource', 'gkp'],
         ['country', 'uk'],
         ['currency', 'GBP'],
-        ['kw[]', 'charity fundraising ideas']
+        ['kw[]', 'charity fundraising ideas'],
+        ['kw[]', 'gifts for him'],
     ]),
     headers: {
         'Accept': 'application/json',
@@ -62,8 +57,8 @@ fetch('https://api.keywordseverywhere.com/v1/get_keyword_data', {
 // Function to fetch related phrases using OpenAI API
 async function getRelatedPhrases(keyword) {
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-        model: 'gpt-3.5-turbo', // Use the appropriate model
-        messages: [{ role: 'user', content: `Generate 100 related search phrases for the keyword: "${keyword}"` }],
+        model: 'gpt-4o', // Use the appropriate model
+        messages: [{ role: 'user', content: `Please ignore all previous instructions. Please respond only in the English language. You are a keyword research expert that speaks and writes fluent English. I want you to generate a list of 50 keywords closely related to "${keyword}" without duplicating any words. Please output the result as an array in the following format: [{'keyword':'the new keyword you generate', 'search-intent' : 'the search intent you classify'}]. The value for keyword should be the keyword you generated, and the value of search intent column should be the search intent of the keyword (commercial, transactional, navigational, informational, local or investigational). After the table, please print "List of same keywords separated by commas:". On the next line print the same list of keywords at the bottom separated by commas. Do not repeat yourself. Do not self reference. Do not explain what you are doing.` }],
         max_tokens: 300,
     }, {
         headers: {
@@ -72,14 +67,16 @@ async function getRelatedPhrases(keyword) {
         },
     });
 
+     // Log the token usage
+     const tokenUsage = response.data.usage;
+     console.log(`Tokens used: ${tokenUsage.total_tokens} (Input: ${tokenUsage.prompt_tokens}, Output: ${tokenUsage.completion_tokens})`);
+
+     
      // Process the response to get clean phrases
      const phrases = response.data.choices[0].message.content
-     .trim()
-     .split(/\n|(?<=\d)\.\s*/) // Split by newline or period followed by space
-     .map(phrase => phrase.replace(/^\d+\.\s*/, '').trim()) // Remove leading numbers and spaces
-     .filter(phrase => phrase && !/^\d+$/.test(phrase)); // Filter out any empty strings and standalone numbers
+     .trim().replace(/(\r\n|\n|\r)/gm, "");;
 
- return phrases;
+    return phrases;
 }
 
 // Start the server
