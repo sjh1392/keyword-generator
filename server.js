@@ -32,8 +32,7 @@ app.get('/api/related-searches', async (req, res) => {
 
         //initiate search
         console.log(Date.now());
-
-        log.sendLog("search", keyword);
+        //log.sendLog("search", keyword);
         const relatedPhrases = await getRelatedPhrases(keyword);
         res.json({ keyword, relatedPhrases });
     } catch (error) {
@@ -93,8 +92,8 @@ async function getRelatedPhrases(keyword) {
         .map(phrase => phrase.replace(/^\d+\.\s*/, '').trim()) // Remove leading numbers and spaces
         .filter(phrase => phrase && !/^\d+$/.test(phrase)); // Filter out any empty strings and standalone numbers
 
-    log.sendLog("search",  `{tokens: ${tokenUsage.total_tokens}}`);
-    log.sendLog("search",  `{results: ${phrases}}`);
+    //log.sendLog("search",  `{tokens: ${tokenUsage.total_tokens}}`);
+    //log.sendLog("search",  `{results: ${phrases}}`);
     console.log(Date.now());
     return phrases;
 }
