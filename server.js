@@ -32,7 +32,25 @@ app.get('/api/related-searches', async (req, res) => {
         console.log(Date.now());
         //log.sendLog("search", keyword);
         const relatedPhrases = await getRelatedPhrases(keyword);
-        res.json({ keyword, relatedPhrases });
+
+
+        let clean = await relatedPhrases;
+        // Remove the first two and last item from the array
+        clean = clean.slice(2, clean.length - 1);
+        let results = [];
+
+        for (var i = 0; i < clean.length; i++) {
+            var newObject = clean[i].trim().replace("\n", "");
+            var parsedObject = JSON.parse(newObject.substring(0, newObject.length - 1));
+            results.push(parsedObject);
+
+            results[i].volume = await getVolume(results[i].keyword);
+
+        }
+
+        res.json({ results });
+
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred while fetching related phrases' });
@@ -43,7 +61,10 @@ app.get('/', async (req, res) => {
     res.send('hello world');
 });
 
-app.get('/api/keyword-volume', async (req, res) => {
+app.get('/api/get-volume', async (req, res) => {
+
+    const { keyword } = req.query;
+    console.log(keyword)
 
     fetch('https://api.keywordseverywhere.com/v1/get_keyword_data', {
         method: 'POST',
@@ -51,8 +72,7 @@ app.get('/api/keyword-volume', async (req, res) => {
             ['dataSource', 'gkp'],
             ['country', 'uk'],
             ['currency', 'GBP'],
-            ['kw[]', 'charity fundraising ideas'],
-            ['kw[]', 'gifts for him'],
+            ['kw[]', keyword]
         ]),
         headers: {
             'Accept': 'application/json',
@@ -67,12 +87,12 @@ app.get('/api/keyword-volume', async (req, res) => {
 });
 
 
-app.get('/api/log', async(req,res)=> { 
+app.get('/api/log', async (req, res) => {
 
-    const {data} = req.query;
-    const {name} = req.query || '';
-    const {session} = req.query;
- 
+    const { data } = req.query;
+    const { name } = req.query || '';
+    const { session } = req.query;
+
     if (!data) {
         console.log(req.query);
         return res.status(499).json({ error: 'log object is required' });
@@ -89,28 +109,51 @@ app.get('/api/log', async(req,res)=> {
 });
 
 
+async function getVolume(keyword) {
+
+    try {
+
+        const response = await fetch(`http://localhost:3001/api/get-volume?keyword=${keyword}`);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+     
+        const data = await response.json(); // Parse the response as JSON
+        console.log(data); // Check the structure of the response
+        return data; // Return the parsed data
+
+    }
+    catch (err) {
+        console.error('error in url parse: ' + err.message);
+    }
+
+}
+
+
 async function testLog(name, data, session) {
-  const logging = new Logging({ projectId: _projectId });
-  const logName = name || 'test-log';
-  const log = logging.log(logName);
+    const logging = new Logging({ projectId: _projectId });
+    const logName = name || 'test-log';
+    const log = logging.log(logName);
 
-  const metadata = {
-    resource: { type: 'global' },
-  };
+    const metadata = {
+        resource: { type: 'global' },
+    };
 
-  const entry = log.entry(metadata, {
-    message: {data, session},
-    severity: 'INFO',
-  });
+    const entry = log.entry(metadata, {
+        message: { data, session },
+        severity: 'INFO',
+    });
 
-  try {
-    await log.write(entry);
-    console.log('Log successfully written!');
-    return {'entry': entry, "status" : "success"};
-  } catch (err) {
-    console.error('Error writing log:', err);
-    return {'entry': entry, "status" :"fail", "message": err};
-  }
+    try {
+        await log.write(entry);
+        console.log('Log successfully written!');
+        return { 'entry': entry, "status": "success" };
+    } catch (err) {
+        console.error('Error writing log:', err);
+        return { 'entry': entry, "status": "fail", "message": err };
+    }
 }
 
 
@@ -133,7 +176,7 @@ async function getRelatedPhrases(keyword) {
     // Log the token usage
     const tokenUsage = response.data.usage;
     //console.log(`Tokens used: ${tokenUsage.total_tokens} (Input: ${tokenUsage.prompt_tokens}, Output: ${tokenUsage.completion_tokens})`);
-    
+
     const phrases = response.data.choices[0].message.content
         .trim()
         .split(/\n|(?<=\d)\.\s*/) // Split by newline or period followed by space
