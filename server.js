@@ -1,19 +1,17 @@
-// server.js
+//imports
 import express from "express";
-import OpenAIApi from "openai";
 import axios from "axios";
 import cors from "cors";
 
 import log from "./service/logService.js";
 import dotenv from "dotenv";
+import { Logging } from '@google-cloud/logging';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const _projectId = 'impactio-439213';
-
-const { Logging } = require('@google-cloud/logging');
 
 app.use(cors());
 
@@ -30,7 +28,6 @@ app.get('/api/related-searches', async (req, res) => {
     }
 
     try {
-
         //initiate search
         console.log(Date.now());
         //log.sendLog("search", keyword);
