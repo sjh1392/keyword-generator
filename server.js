@@ -63,7 +63,7 @@ app.get('/api/related-searches', async (req, res) => {
 });
 
 app.get('/', async (req, res) => {
-    res.send('hello world');
+    res.send('<h1>Keyword AP - Endpoints:</h1><ul><li>/api/related-searches?keyword={keyword}</li><li>/api/get-volume?keyword={keyword}</li></ul>');
 });
 
 app.get('/api/get-volume', async (req, res) => {
