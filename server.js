@@ -7,6 +7,11 @@ import log from "./service/logService.js";
 import dotenv from "dotenv";
 import { Logging } from '@google-cloud/logging';
 
+
+const BASE_URL = process.env.NODE_ENV === 'production'
+  ? "https://keywordio-d7419b16e33c.herokuapp.com/" // Production URL
+  : "http://localhost:3001"; // Development URL
+
 dotenv.config();
 
 const app = express();
@@ -113,7 +118,7 @@ async function getVolume(keyword) {
 
     try {
 
-        const response = await fetch(`http://localhost:3001/api/get-volume?keyword=${keyword}`);
+        const response = await fetch(`${BASE_URL}/api/get-volume?keyword=${keyword}`);
 
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
