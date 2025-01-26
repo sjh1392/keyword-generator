@@ -41,16 +41,21 @@ app.get('/api/related-searches', async (req, res) => {
         const relatedPhrases = await getRelatedPhrases(keyword, speed);
 
         let clean = await relatedPhrases;
-
-        let jsonString = clean.join('');
         
+
+        // Step 1: Join the array into a single string
+        let jsonString = clean.join('');
+
+        // Step 2: Remove the outer brackets
         jsonString = jsonString.replace(/^\[/, '').replace(/\]$/, '');
 
-
+        // Step 3: Wrap the JSON objects in an array and parse
         jsonString = `[${jsonString}]`;
         const arrayOfObjects = JSON.parse(jsonString);
 
         console.log(arrayOfObjects);
+
+
         
         let results = [];
 
@@ -173,7 +178,9 @@ async function getRelatedPhrases(keyword, speed) {
 
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
         model: 'gpt-4o', // Use the appropriate model
-        messages: [{ role: 'user', content: `Please ignore all previous instructions. Please respond only in the English language. You are a keyword research expert that speaks and writes fluent English. I want you to generate a list of 50 keywords closely related to "${keyword}" without duplicating any words. Please output the result as an array in the following format: [{'keyword':' 'search-intent'}]. Do not wrap the json codes in JSON markers, do not include a comma separated list. The value for keyword should be the keyword you generated, and the value of search intent column should be the search intent of the keyword (commercial, transactional, navigational, informational, local or investigational). Do not repeat yourself. Do not self reference. Do not include any explanations, only provide a  RFC8259 compliant JSON response following this format without deviation. [{"keyword":"the keyword you have genrated","intent" : "the intent you have decided for the keyword you have generated"}]` }],
+        messages: [
+            { role: "system", content: "You are a helpful assistant.  Do not include any explanations, only provide a  RFC8259 compliant JSON response following this format without deviation.  Do not wrap the json codes in JSON markers, do not include a comma separated list." },
+            { role: 'user', content: `Please ignore all previous instructions. Please respond only in the English language. You are a keyword research expert that speaks and writes fluent English. I want you to generate a list of 50 keywords closely related to "${keyword}" without duplicating any words. Please output the result as an array in the following format: [{'keyword':' 'search-intent'}]. The value for keyword should be the keyword you generated, and the value of search intent column should be the search intent of the keyword (commercial, transactional, navigational, informational, local or investigational). Do not repeat yourself. Do not self reference. [{"keyword":"the keyword you have genrated","intent" : "the intent you have decided for the keyword you have generated"}]` }],
         max_tokens: 1000,
     }, {
         headers: {
@@ -194,7 +201,9 @@ async function getRelatedPhrases(keyword, speed) {
     //log.sendLog("search",  `{tokens: ${tokenUsage.total_tokens}}`);
     //log.sendLog("search",  `{results: ${phrases}}`);
     console.log(Date.now());
+    console.log(phrases);
 
+    
     return phrases;
 }
 
