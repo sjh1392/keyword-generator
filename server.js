@@ -27,6 +27,8 @@ app.use(express.json());
 app.get('/api/related-searches', async (req, res) => {
 
     const { keyword } = req.query;
+    const {speed} = req.query;
+    
 
     if (!keyword) {
         return res.status(400).json({ error: 'Keyword is required' });
@@ -36,19 +38,25 @@ app.get('/api/related-searches', async (req, res) => {
         //initiate search
         console.log(Date.now());
         //log.sendLog("search", keyword);
-        const relatedPhrases = await getRelatedPhrases(keyword);
-
+        const relatedPhrases = await getRelatedPhrases(keyword, speed);
 
         let clean = await relatedPhrases;
-        // Remove the first two and last item from the array
-        clean = clean.slice(2, clean.length - 1);
+
+        let jsonString = clean.join('');
+        
+        jsonString = jsonString.replace(/^\[/, '').replace(/\]$/, '');
+
+
+        jsonString = `[${jsonString}]`;
+        const arrayOfObjects = JSON.parse(jsonString);
+
+        console.log(arrayOfObjects);
+        
         let results = [];
 
-        for (var i = 0; i < clean.length; i++) {
-            var newObject = clean[i].trim().replace("\n", "");
-            var parsedObject = JSON.parse(newObject.substring(0, newObject.length - 1));
-            results.push(parsedObject);
+        for (var i = 0; i < arrayOfObjects.length; i++) {
 
+            results.push(arrayOfObjects[i]);
             results[i].volume = await getVolume(results[i].keyword);
 
         }
@@ -69,7 +77,7 @@ app.get('/', async (req, res) => {
 app.get('/api/get-volume', async (req, res) => {
 
     const { keyword } = req.query;
-    console.log(keyword)
+
 
     fetch('https://api.keywordseverywhere.com/v1/get_keyword_data', {
         method: 'POST',
@@ -124,9 +132,7 @@ async function getVolume(keyword) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
-     
         const data = await response.json(); // Parse the response as JSON
-        console.log(data); // Check the structure of the response
         return data; // Return the parsed data
 
     }
@@ -162,15 +168,13 @@ async function testLog(name, data, session) {
 }
 
 
-
-
 // Function to fetch related phrases using OpenAI API
-async function getRelatedPhrases(keyword) {
+async function getRelatedPhrases(keyword, speed) {
 
     const response = await axios.post('https://api.openai.com/v1/chat/completions', {
         model: 'gpt-4o', // Use the appropriate model
-        messages: [{ role: 'user', content: `Please ignore all previous instructions. Please respond only in the English language. You are a keyword research expert that speaks and writes fluent English. I want you to generate a list of 50 keywords closely related to "${keyword}" without duplicating any words. Please output the result as an array in the following format: [{'keyword':' 'search-intent'}]. The value for keyword should be the keyword you generated, and the value of search intent column should be the search intent of the keyword (commercial, transactional, navigational, informational, local or investigational). After the table, please print "List of same keywords separated by commas:". On the next line print the same list of keywords at the bottom separated by commas. Do not repeat yourself. Do not self reference. Do not include any explanations, only provide a  RFC8259 compliant JSON response following this format without deviation. [{"keyword":"the keyword you have genrated","intent" : "the intent you have decided for the keyword you have generated"}]` }],
-        max_tokens: 500,
+        messages: [{ role: 'user', content: `Please ignore all previous instructions. Please respond only in the English language. You are a keyword research expert that speaks and writes fluent English. I want you to generate a list of 50 keywords closely related to "${keyword}" without duplicating any words. Please output the result as an array in the following format: [{'keyword':' 'search-intent'}]. Do not wrap the json codes in JSON markers, do not include a comma separated list. The value for keyword should be the keyword you generated, and the value of search intent column should be the search intent of the keyword (commercial, transactional, navigational, informational, local or investigational). Do not repeat yourself. Do not self reference. Do not include any explanations, only provide a  RFC8259 compliant JSON response following this format without deviation. [{"keyword":"the keyword you have genrated","intent" : "the intent you have decided for the keyword you have generated"}]` }],
+        max_tokens: 1000,
     }, {
         headers: {
             'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, // Add the API key as an authorization header
@@ -180,8 +184,7 @@ async function getRelatedPhrases(keyword) {
 
     // Log the token usage
     const tokenUsage = response.data.usage;
-    //console.log(`Tokens used: ${tokenUsage.total_tokens} (Input: ${tokenUsage.prompt_tokens}, Output: ${tokenUsage.completion_tokens})`);
-
+    
     const phrases = response.data.choices[0].message.content
         .trim()
         .split(/\n|(?<=\d)\.\s*/) // Split by newline or period followed by space
@@ -191,6 +194,7 @@ async function getRelatedPhrases(keyword) {
     //log.sendLog("search",  `{tokens: ${tokenUsage.total_tokens}}`);
     //log.sendLog("search",  `{results: ${phrases}}`);
     console.log(Date.now());
+
     return phrases;
 }
 
