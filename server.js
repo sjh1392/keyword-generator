@@ -9,7 +9,7 @@ import { Logging } from '@google-cloud/logging';
 
 
 const BASE_URL = process.env.NODE_ENV === 'production'
-  ? "https://keywordio-d7419b16e33c.herokuapp.com/" // Production URL
+  ? "https://keywordio-d7419b16e33c.herokuapp.com" // Production URL
   : "http://localhost:3001"; // Development URL
 
 dotenv.config();
