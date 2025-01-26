@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build" : "netlify deploy --prod"
+    "build": "netlify deploy --prod"
   },
   "type": "module",
   "author": "",
@@ -16,6 +16,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "netlify": "^13.3.2",
     "netlify-cli": "^18.0.2",
     "netlify-lambda": "^0.4.0",
     "openai": "^4.79.3",

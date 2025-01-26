@@ -4,10 +4,15 @@ import OpenAIApi from "openai";
 import axios from "axios";
 import cors from "cors";
 
+
+
+
 import log from "./service/logService.js";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,6 +21,8 @@ app.use(cors());
 
 // Middleware to parse JSON requests
 app.use(express.json());
+
+
 
 // Endpoint to get related search phrases
 app.get('/api/related-searches', async (req, res) => {
@@ -102,3 +109,4 @@ async function getRelatedPhrases(keyword) {
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
+
